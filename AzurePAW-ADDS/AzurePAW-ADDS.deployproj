@@ -25,6 +25,16 @@
   <ItemGroup>
     <Content Include="azuredeploy.json" />
     <Content Include="azuredeploy.parameters.json" />
+    <None Include="data\adcsVm.json" />
+    <None Include="data\dc1Vm.json" />
+    <None Include="data\dc2Vm.json" />
+    <None Include="data\deployADCS.json" />
+    <None Include="data\deployAntimalware.json" />
+    <None Include="data\deployDIAD.json" />
+    <None Include="data\deployPrimaryAD.json" />
+    <None Include="data\encryptVM.json" />
+    <None Include="data\promoteSecondDC.json" />
+    <None Include="data\vmDiagnostics.json" />
     <None Include="Deployment.targets">
       <Visible>False</Visible>
     </None>

@@ -1,8 +1,826 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
-  "parameters": {},
-  "variables": {},
-  "resources": [],
+  "parameters": {
+
+    "domainName": {
+      "type": "string",
+      "metadata": {
+        "description": "Current deployment supports top level domain name only, for example contoso.com, fabrikam.com etc"
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Administrator of the new VMs and Domain"
+      },
+      "defaultValue": "labadmin"
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The password for the Administrator account of the new VMs and Domain. If you do not change it, then it will look like this: Subscription#SUBSCRIPTIONID"
+      },
+      "defaultValue": "[concat('Subscription#',subscription().subscriptionId)]"
+    },
+    "existingVirtualNetworkName": {
+      "type": "string",
+      "defaultValue": "Existing vNet Name where this deployment will be deployed to",
+      "metadata": {
+        "description": "Specify the name for the vNet to which this server will be deployed."
+      }
+    },
+    "existingVirtualNetworkRG": {
+      "type": "string",
+      "defaultValue": "vNet RG Name",
+      "metadata": {
+        "description": "Name of the existing VNET resource group"
+      }
+    },
+    "DomainControllersSubnetName": {
+      "type": "string",
+      "defaultValue": "Subnet Name where DCs will be deployed in vNet -> DomainControllers...",
+      "metadata": {
+        "description": "Name of the subnet in the virtual network you want to put this VM"
+      }
+    },
+    "subscriptionID": {
+      "type": "string",
+      "metadata": {
+        "description": "Subscription ID is used to provide access path to the Secrets Key Vault"
+      },
+      "defaultValue": "Subscription ID for Secrets Key Vault that provide access to the deployment scripts."
+    },
+    "secretsVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Key Vault where secrets are stored for accessing deployment scripts"
+      }
+    },
+    "secretsKeyVaultRG": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the RG where Secrets Key Vault is stored"
+      }
+    },
+    "VirtualMachineSize": {
+      "type": "string",
+      "allowedValues": [
+        "Standard_DS12_v2",
+        "Standard_D8S_v3",
+        "Standard_A2"
+      ],
+      "metadata": {
+        "description": "VM Size. The bigger it is, the more $ you will spend."
+      },
+      "defaultValue": "Standard_D8S_v3"
+    },
+    "DC1VMName": {
+      "type": "string",
+      "metadata": {
+        "description": "Must be compliant with Windows Server naming convention"
+      },
+      "defaultValue": "DC1-LAB"
+    },
+    "DC2VMName": {
+      "type": "string",
+      "metadata": {
+        "description": "Must be compliant with Windows Server naming convention"
+      },
+      "defaultValue": "DC2-LAB"
+    },
+    "adcsVMName": {
+      "type": "string",
+      "metadata": {
+        "description": "Must be compliant with Windows Server naming convention"
+      },
+      "defaultValue": "CA1-LAB"
+    },
+    "DC1IPAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "IP Address for DC 1"
+      },
+      "defaultValue": "10.0.1.4"
+    },
+    "DC2IPAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "IP Address for DC 2"
+      },
+      "defaultValue": "10.0.1.5"
+    },
+    "ADCSIPAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "IP Address for PKI server"
+      },
+      "defaultValue": "10.0.1.6"
+    },
+    "ScriptsLocation": {
+      "type": "string",
+      "metadata": {
+        "description": "Storage account for scripts"
+      },
+      "defaultValue": "https://azurepaw.blob.core.windows.net"
+    },
+    "diagnosticsStorageAccountName": {
+      "type": "string",
+      "defaultValue": "RealStorageAccountName",
+      "metadata": {
+        "description": "Specify storage account that will be used for VM diagnostics"
+      }
+    },
+    "StorageAccountRG": {
+      "type": "string",
+      "defaultValue": "RG where Storage account is located",
+      "metadata": {
+        "description": "Specify storage account RG"
+      }
+    },
+    "adeKeyVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "Key Vault Name used for Azure Disk Encryption for this VM. Must be in the same region as this VM"
+      }
+    },
+    "adeKeyVaultResourceGroup": {
+      "type": "string",
+      "metadata": {
+        "description": "ADE Key Vault RG"
+      }
+    }
+  },
+  "variables": {
+    "assetLocation": "https://raw.githubusercontent.com/dmitriilezine/AzurePAW-ADDS/master/AzurePAW-ADDS",
+    "assetLocationStorageAccount": "[parameters('ScriptsLocation')]",
+    "VMSize": "[parameters('VirtualMachineSize')]",
+    "OSVersion": "2016-Datacenter",
+
+    "ADDSsubnetResourceID": "[resourceId(parameters('existingVirtualNetworkRG'), 'Microsoft.Network/virtualNetworks/subnets', parameters('existingVirtualNetworkName'), parameters('DomainControllersSubnetName'))]",
+
+    "primaryDC1IpAddress": "[parameters('DC1IPAddress')]",
+    "primaryDC2IpAddress": "[parameters('DC2IPAddress')]",
+    "primaryADCSIpAddress": "[parameters('ADCSIPAddress')]",
+
+    "dc1TemplateURL": "[concat(variables('assetLocation'),'/data/dc1Vm.json')]",
+    "dc2TemplateURL": "[concat(variables('assetLocation'),'/data/dc2Vm.json')]",
+    "adcsVMTemplateURL": "[concat(variables('assetLocation'),'/data/adcsVm.json')]",
+    "deployPrimaryAdTemplateURL": "[concat(variables('assetLocation'),'/data/deployPrimaryAD.json')]",
+    "deployDC2AdTemplateURL": "[concat(variables('assetLocation'),'/data/promoteSecondDC.json')]",
+    "deployADCSTemplateURL": "[concat(variables('assetLocation'),'/data/deployADCS.json')]",
+    "deployDIADTemplateURL": "[concat(variables('assetLocation'),'/data/deployDIAD.json')]",
+    "vmDiagnosticsTemplateURL": "[concat(variables('assetLocation'),'/data/vmDiagnostics.json')]",
+    "vmAntimalwareTemplateURL": "[concat(variables('assetLocation'),'/data/deployAntimalware.json')]",
+    "vmADETemplateURL": "[concat(variables('assetLocation'),'/data/encryptVM.json')]",
+
+    "dc1VMName": "[parameters('DC1VMName')]",
+    "dc2VMName": "[parameters('DC2VMName')]",
+    "adcsVMName": "[parameters('adcsVMName')]",
+
+    "dc1VmDeployment": "CreateADDC1VM",
+    "dc1VmDeploymentId": "[concat('Microsoft.Resources/deployments/', variables('dc1VmDeployment'))]",
+    "dc2VmDeployment": "CreateADDC2VM",
+    "dc2VmDeploymentId": "[concat('Microsoft.Resources/deployments/', variables('dc2VmDeployment'))]",
+
+    "deployPrimaryAd": "ConfigureAD",
+    "deployPrimaryAdId": "[concat('Microsoft.Resources/deployments/', variables('deployPrimaryAd'))]",
+    "deployDC2Ad": "PromoteDC2toAD",
+    "deployDC2AdId": "[concat('Microsoft.Resources/deployments/', variables('deployDC2Ad'))]",
+
+    "adcsVmDeployment": "CreateADCSVM",
+    "adcsVmDeploymentId": "[concat('Microsoft.Resources/deployments/', variables('adcsVmDeployment'))]",
+
+    "adcsDeployment": "DeployADCS",
+    "adcsDeploymentId": "[concat('Microsoft.Resources/deployments/', variables('adcsDeployment'))]",
+
+    "DIADouGPODeployment": "DeployDIAD-OUs-GPOs",
+    "DIADouGPODeploymentId": "[concat('Microsoft.Resources/deployments/', variables('DIADouGPODeployment'))]",
+
+    "deployVMDiagnosticsDC1": "deployVMDiagnosticsDC1",
+    "deployVMDiagnosticsDC1Id": "[concat('Microsoft.Resources/deployments/', variables('deployVMDiagnosticsDC1'))]",
+    "deployVMDiagnosticsDC2": "deployVMDiagnosticsDC2",
+    "deployVMDiagnosticsDC2Id": "[concat('Microsoft.Resources/deployments/', variables('deployVMDiagnosticsDC2'))]",
+    "deployVMDiagnosticsADCS": "deployVMDiagnosticsADCS",
+    "deployVMDiagnosticsADCSId": "[concat('Microsoft.Resources/deployments/', variables('deployVMDiagnosticsADCS'))]",
+
+    "deployAntimalwareDC1": "deployAntimalwareDC1",
+    "deployAntimalwareDC1Id": "[concat('Microsoft.Resources/deployments/', variables('deployAntimalwareDC1'))]",
+    "deployAntimalwareDC2": "deployAntimalwareDC2",
+    "deployAntimalwareDC2Id": "[concat('Microsoft.Resources/deployments/', variables('deployAntimalwareDC2'))]",
+    "deployAntimalwareADCS": "deployAntimalwareADCS",
+    "deployAntimalwareADCSId": "[concat('Microsoft.Resources/deployments/', variables('deployAntimalwareADCS'))]",
+
+    "encryptDC1": "encryptDC1",
+    "encryptDC1Id": "[concat('Microsoft.Resources/deployments/', variables('encryptDC1'))]",
+    "encryptDC2": "encryptDC2",
+    "encryptDC2Id": "[concat('Microsoft.Resources/deployments/', variables('encryptDC2'))]",
+    "encryptADCS": "encryptADCS",
+    "encryptADCSId": "[concat('Microsoft.Resources/deployments/', variables('encryptADCS'))]",
+
+    "shortDomainName": "[split(parameters('domainName'),'.')[0]]",
+    "domainSuffix": "[split(parameters('domainName'),'.')[1]]",
+    "ouPathT0Devices": "[concat('OU=T0-Devices; OU=Tier 0; OU=Admin;', 'DC=',variables('shortDomainName'),'; DC=',variables('domainSuffix'))]",
+    "ouPathAdmin": "[concat('OU=Admin;', 'DC=',variables('shortDomainName'),'; DC=',variables('domainSuffix'))]",
+    "ouPathHGS": "[concat('OU=T0-HGS; OU=T0-Servers; OU=Tier 0; OU=Admin;', 'DC=',variables('shortDomainName'),'; DC=',variables('domainSuffix'))]",
+    "ouPathT0Idenity": "[concat('OU=T0-Identity; OU=T0-Servers; OU=Tier 0; OU=Admin;', 'DC=',variables('shortDomainName'),'; DC=',variables('domainSuffix'))]",
+    "ouPathNone": "",
+
+    "secretsVaultName": "[parameters('secretsVaultName')]",
+    "secretName": "AzurePAWPOC1SAKey2",
+    "secretnameSASurl": "AzurePAWPOC1SAS",
+    "secretsKeyVaultRG": "[parameters('secretsKeyVaultRG')]",
+    "secretskeyVaultID": "[concat('/subscriptions/', parameters('subscriptionID'), '/resourceGroups/', variables('secretsKeyVaultRG'), '/providers/Microsoft.KeyVault/vaults/', variables('secretsVaultName'))]",
+
+    "diagnosticsaccountid": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/',parameters('StorageAccountRG'), '/providers/','Microsoft.Storage/storageAccounts/', parameters('diagnosticsStorageAccountName'))]",
+
+    "imageOffer": "WindowsServer",
+    "imagePublisher": "MicrosoftWindowsServer",
+
+    "adAvailabilitySetName": "addsAvailabiltySet",
+
+    "dc1NICName": "[concat('DC1-Nic',resourceGroup().name)]",
+    "dc2NICName": "[concat('DC2-Nic',resourceGroup().name)]",
+    "adcsNICName": "[concat('ADCS-Nic',resourceGroup().name)]"
+
+  },
+  "resources": [
+    {
+      "name": "[variables('adAvailabilitySetName')]",
+      "type": "Microsoft.Compute/availabilitySets",
+      "apiVersion": "2017-03-30",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "PlatformUpdateDomainCount": 3,
+        "PlatformFaultDomainCount": 2
+      },
+      "sku": {
+        "name": "Aligned"
+      }
+    },
+    {
+      "name": "[variables('dc1VmDeployment')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/availabilitySets',variables('adAvailabilitySetName'))]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('dc1TemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "adminUsername": {
+            "value": "[parameters('adminUsername')]"
+          },
+          "adminPassword": {
+            "value": "[parameters('adminPassword')]"
+          },
+          "subnetResourceID": {
+            "value": "[variables('ADDSsubnetResourceID')]"
+          },
+          "windowsImageSKU": {
+            "value": "[variables('OSVersion')]"
+          },
+          "vmName": {
+            "value": "[variables('dc1VMName')]"
+          },
+          "vmSize": {
+            "value": "[variables('VMSize')]"
+          },
+          "adDNicName": {
+            "value": "[variables('dc1NICName')]"
+          },
+          "primaryAdIpAddress": {
+            "value": "[variables('primaryDC1IpAddress')]"
+          },
+          "adAvailabilitySetName": {
+            "value": "[variables('adAvailabilitySetName')]"
+          },
+          "diagnosticsStorageAccountName": {
+            "value": "[parameters('diagnosticsStorageAccountName')]"
+          }
+        }
+      }
+    },
+    {
+      "name": "[variables('deployPrimaryAd')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('dc1VmDeploymentId')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('deployPrimaryAdTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "dc1VMName": {
+            "value": "[variables('dc1VMName')]"
+          },
+          "domainName": {
+            "value": "[parameters('domainName')]"
+          },
+          "adminUsername": {
+            "value": "[parameters('adminUsername')]"
+          },
+          "adminPassword": {
+            "value": "[parameters('adminPassword')]"
+          },
+          "assetLocationStorageAccount": {
+            "value": "[variables('assetLocationStorageAccount')]"
+          },
+          "storageAccountKeyviaKeyvault": {
+            "reference": {
+              "keyVault": {
+                "id": "[variables('secretskeyVaultID')]"
+              },
+              "secretName": "[variables('secretName')]"
+            }
+          },
+          "storageAccountSASTokenviaKeyvault": {
+            "reference": {
+              "keyVault": {
+                "id": "[variables('secretskeyVaultID')]"
+              },
+              "secretName": "[variables('secretnameSASurl')]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "[variables('dc2VmDeployment')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/availabilitySets',variables('adAvailabilitySetName'))]",
+        "[variables('deployPrimaryAdId')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('dc2TemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "adminUsername": {
+            "value": "[parameters('adminUsername')]"
+          },
+          "adminPassword": {
+            "value": "[parameters('adminPassword')]"
+          },
+          "subnetResourceID": {
+            "value": "[variables('ADDSsubnetResourceID')]"
+          },
+          "windowsImageSKU": {
+            "value": "[variables('OSVersion')]"
+          },
+          "vmName": {
+            "value": "[variables('dc2VMName')]"
+          },
+          "vmSize": {
+            "value": "[variables('VMSize')]"
+          },
+          "NicName": {
+            "value": "[variables('dc2NICName')]"
+          },
+          "assetLocation": {
+            "value": "[variables('assetLocation')]"
+          },
+          "primaryIpAddress": {
+            "value": "[variables('primaryDC2IpAddress')]"
+          },
+          "domainName": {
+            "value": "[parameters('domainName')]"
+          },
+          "adAvailabilitySetName": {
+            "value": "[variables('adAvailabilitySetName')]"
+          },
+          "diagnosticsStorageAccountName": {
+            "value": "[parameters('diagnosticsStorageAccountName')]"
+          }
+        }
+      }
+    },
+    {
+      "name": "[variables('deployDC2AD')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('dc2VmDeploymentId')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('deployDC2AdTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "dc2VMName": {
+            "value": "[variables('dc2VMName')]"
+          },
+          "domainName": {
+            "value": "[parameters('domainName')]"
+          },
+          "adminUsername": {
+            "value": "[parameters('adminUsername')]"
+          },
+          "adminPassword": {
+            "value": "[parameters('adminPassword')]"
+          },
+          "assetLocation": {
+            "value": "[variables('assetLocation')]"
+          },
+          "assetLocationStorageAccount": {
+            "value": "[variables('assetLocationStorageAccount')]"
+          },
+          "storageAccountKeyviaKeyvault": {
+            "reference": {
+              "keyVault": {
+                "id": "[variables('secretskeyVaultID')]"
+              },
+              "secretName": "[variables('secretName')]"
+            }
+          },
+          "storageAccountSASTokenviaKeyvault": {
+            "reference": {
+              "keyVault": {
+                "id": "[variables('secretskeyVaultID')]"
+              },
+              "secretName": "[variables('secretnameSASurl')]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "comments": "Deploy ADCS VM",
+      "name": "[variables('adcsVmDeployment')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('deployPrimaryAdId')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('adcsVMTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "adminUsername": {
+            "value": "[parameters('adminUsername')]"
+          },
+          "adminPassword": {
+            "value": "[parameters('adminPassword')]"
+          },
+          "subnetResourceID": {
+            "value": "[variables('ADDSsubnetResourceID')]"
+          },
+          "windowsImageSKU": {
+            "value": "[variables('OSVersion')]"
+          },
+          "vmName": {
+            "value": "[variables('adcsVMName')]"
+          },
+          "vmSize": {
+            "value": "[variables('VMSize')]"
+          },
+          "NicName": {
+            "value": "[variables('adcsNICName')]"
+          },
+          "primaryIpAddress": {
+            "value": "[variables('primaryADCSIpAddress')]"
+          },
+          "domainName": {
+            "value": "[parameters('domainName')]"
+          },
+          "ouPath": {
+            "value": "[variables('ouPathNone')]"
+          }
+        }
+      }
+    },
+    {
+      "comments": "Deploy DIAD OUs and GPOs",
+      "name": "[variables('DIADouGPODeployment')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('deployDC2Ad')]",
+        "[variables('adcsVmDeployment')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('deployDIADTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "VMName": {
+            "value": "[variables('dc1VMName')]"
+          },
+          "domainName": {
+            "value": "[parameters('domainName')]"
+          },
+          "adminUsername": {
+            "value": "[parameters('adminUsername')]"
+          },
+          "adminPassword": {
+            "value": "[parameters('adminPassword')]"
+          },
+          "assetLocationStorageAccount": {
+            "value": "[variables('assetLocationStorageAccount')]"
+          },
+          "adcsVMName": {
+            "value": "[variables('adcsVMName')]"
+          },
+          "storageAccountKeyviaKeyvault": {
+            "reference": {
+              "keyVault": {
+                "id": "[variables('secretskeyVaultID')]"
+              },
+              "secretName": "[variables('secretName')]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "comments": "Install ADCS on ADCS VM",
+      "name": "[variables('adcsDeployment')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('adcsVmDeployment')]",
+        "[variables('DIADouGPODeployment')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('deployADCSTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "adcsVMName": {
+            "value": "[variables('adcsVMName')]"
+          },
+          "domainName": {
+            "value": "[parameters('domainName')]"
+          },
+          "adminUsername": {
+            "value": "[parameters('adminUsername')]"
+          },
+          "adminPassword": {
+            "value": "[parameters('adminPassword')]"
+          },
+          "assetLocationStorageAccount": {
+            "value": "[variables('assetLocationStorageAccount')]"
+          },
+          "storageAccountKeyviaKeyvault": {
+            "reference": {
+              "keyVault": {
+                "id": "[variables('secretskeyVaultID')]"
+              },
+              "secretName": "[variables('secretName')]"
+            }
+          },
+          "storageAccountSASTokenviaKeyvault": {
+            "reference": {
+              "keyVault": {
+                "id": "[variables('secretskeyVaultID')]"
+              },
+              "secretName": "[variables('secretnameSASurl')]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "[variables('deployVMDiagnosticsDC1')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('dc1VmDeployment')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmDiagnosticsTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[variables('dc1VMName')]"
+          },
+          "diagnosticsStorageAccountName": {
+            "value": "[parameters('diagnosticsStorageAccountName')]"
+          },
+          "accountid": {
+            "value": "[variables('diagnosticsaccountid')]"
+          }
+        }
+      }
+    },
+    {
+      "name": "[variables('deployVMDiagnosticsDC2')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('dc2VmDeployment')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmDiagnosticsTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[variables('dc2VMName')]"
+          },
+          "diagnosticsStorageAccountName": {
+            "value": "[parameters('diagnosticsStorageAccountName')]"
+          },
+          "accountid": {
+            "value": "[variables('diagnosticsaccountid')]"
+          }
+        }
+      }
+    },
+    {
+      "name": "[variables('deployVMDiagnosticsADCS')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('adcsVmDeployment')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmDiagnosticsTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[variables('adcsVMName')]"
+          },
+          "diagnosticsStorageAccountName": {
+            "value": "[parameters('diagnosticsStorageAccountName')]"
+          },
+          "accountid": {
+            "value": "[variables('diagnosticsaccountid')]"
+          }
+        }
+      }
+    },
+    {
+      "name": "[variables('deployAntimalwareDC1')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('dc1VmDeployment')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmAntimalwareTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[variables('dc1VMName')]"
+          }
+        }
+      }
+    },
+
+    {
+      "name": "[variables('deployAntimalwareDC2')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('dc2VmDeployment')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmAntimalwareTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[variables('dc2VMName')]"
+          }
+        }
+      }
+    },
+    {
+      "name": "[variables('deployAntimalwareADCS')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('adcsVmDeployment')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmAntimalwareTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[variables('adcsVMName')]"
+          }
+        }
+      }
+    },
+    {
+      "name": "[variables('encryptDC1')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('DIADouGPODeployment')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmADETemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[variables('dc1VMName')]"
+          },
+          "adeKeyVaultName": {
+            "value": "[parameters('adeKeyVaultName')]"
+          },
+          "keyVaultResourceGroup": {
+            "value": "[parameters('adeKeyVaultResourceGroup')]"
+          }
+        }
+
+      }
+    },
+    {
+      "name": "[variables('encryptDC2')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('DIADouGPODeployment')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmADETemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[variables('dc2VMName')]"
+          },
+          "adeKeyVaultName": {
+            "value": "[parameters('adeKeyVaultName')]"
+          },
+          "keyVaultResourceGroup": {
+            "value": "[parameters('adeKeyVaultResourceGroup')]"
+          }
+        }
+
+      }
+    },
+    {
+      "name": "[variables('encryptADCS')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('adcsDeployment')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmADETemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[variables('adcsVMName')]"
+          },
+          "adeKeyVaultName": {
+            "value": "[parameters('adeKeyVaultName')]"
+          },
+          "keyVaultResourceGroup": {
+            "value": "[parameters('adeKeyVaultResourceGroup')]"
+          }
+        }
+
+      }
+    }
+  ],
   "outputs": {}
 }
