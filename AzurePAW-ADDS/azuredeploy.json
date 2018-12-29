@@ -699,7 +699,6 @@
         }
       }
     },
-
     {
       "name": "[variables('deployAntimalwareDC2')]",
       "type": "Microsoft.Resources/deployments",
@@ -764,7 +763,6 @@
             "value": "[parameters('adeKeyVaultResourceGroup')]"
           }
         }
-
       }
     },
     {
@@ -791,7 +789,6 @@
             "value": "[parameters('adeKeyVaultResourceGroup')]"
           }
         }
-
       }
     },
     {
@@ -818,7 +815,6 @@
             "value": "[parameters('adeKeyVaultResourceGroup')]"
           }
         }
-
       }
     }
   ],
