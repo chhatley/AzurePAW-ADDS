@@ -502,6 +502,9 @@
           },
           "ouPath": {
             "value": "[variables('ouPathNone')]"
+          },
+          "diagnosticsStorageAccountName": {
+            "value": "[parameters('diagnosticsStorageAccountName')]"
           }
         }
       }
