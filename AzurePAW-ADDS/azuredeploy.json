@@ -23,6 +23,13 @@
       },
       "defaultValue": "[concat('Subscription#',subscription().subscriptionId)]"
     },
+    "adfsSVCname": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the ADFS Service Account to be created in ADDS. it will have the same password as the admin. Reset it after ADDS installation"
+      },
+      "defaultValue": "adfs-svc"
+    },
     "existingVirtualNetworkName": {
       "type": "string",
       "defaultValue": "Existing vNet Name where this deployment will be deployed to",
@@ -117,6 +124,17 @@
         "description": "IP Address for PKI server"
       },
       "defaultValue": "10.0.1.6"
+    },
+    "deployADCS": {
+      "type": "string",
+      "defaultValue": "Yes",
+      "allowedValues": [
+        "No",
+        "Yes"
+      ],
+      "metadata": {
+        "description": "Deploy PKI CA into this ADDS."
+      }
     },
     "ScriptsLocation": {
       "type": "string",
@@ -460,6 +478,7 @@
       }
     },
     {
+      "condition": "[equals(parameters('deployADCS'),'Yes')]",
       "comments": "Deploy ADCS VM",
       "name": "[variables('adcsVmDeployment')]",
       "type": "Microsoft.Resources/deployments",
@@ -538,6 +557,9 @@
           "adminPassword": {
             "value": "[parameters('adminPassword')]"
           },
+          "adfsSVCname": {
+            "value": "[parameters('adfsSVCname')]"
+          },
           "assetLocationStorageAccount": {
             "value": "[variables('assetLocationStorageAccount')]"
           },
@@ -556,6 +578,7 @@
       }
     },
     {
+      "condition": "[equals(parameters('deployADCS'),'Yes')]",
       "comments": "Install ADCS on ADCS VM",
       "name": "[variables('adcsDeployment')]",
       "type": "Microsoft.Resources/deployments",
@@ -658,6 +681,7 @@
       }
     },
     {
+      "condition": "[equals(parameters('deployADCS'),'Yes')]",
       "name": "[variables('deployVMDiagnosticsADCS')]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
@@ -724,6 +748,7 @@
       }
     },
     {
+      "condition": "[equals(parameters('deployADCS'),'Yes')]",
       "name": "[variables('deployAntimalwareADCS')]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
@@ -796,6 +821,7 @@
       }
     },
     {
+      "condition": "[equals(parameters('deployADCS'),'Yes')]",
       "name": "[variables('encryptADCS')]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
