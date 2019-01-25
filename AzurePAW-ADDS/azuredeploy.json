@@ -456,7 +456,8 @@
       "apiVersion": "2015-01-01",
       "dependsOn": [
         "[resourceId('Microsoft.Compute/availabilitySets',variables('adAvailabilitySetName'))]",
-        "[variables('deployPrimaryAdId')]"
+        "[variables('deployPrimaryAdWithDNSId')]",
+        "[variables('deployPrimaryAdWithoutDNSId')]"
       ],
       "properties": {
         "mode": "Incremental",
@@ -621,7 +622,8 @@
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
       "dependsOn": [
-        "[variables('deployPrimaryAdId')]"
+        "[variables('deployPrimaryAdWithDNSId')]",
+        "[variables('deployPrimaryAdWithoutDNSId')]"
       ],
       "properties": {
         "mode": "Incremental",
@@ -672,7 +674,8 @@
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
       "dependsOn": [
-        "[variables('deployDC2Ad')]",
+        "[variables('deployDC2AdWithDNS')]",
+        "[variables('deployDC2AdWithoutDNS')]",
         "[variables('adcsVmDeployment')]"
       ],
       "properties": {
