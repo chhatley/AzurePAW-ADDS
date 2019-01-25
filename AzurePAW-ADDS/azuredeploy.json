@@ -9,6 +9,17 @@
         "description": "Current deployment supports top level domain name only, for example contoso.com, fabrikam.com etc"
       }
     },
+    "deployWithDNS": {
+      "type": "string",
+      "defaultValue": "Yes",
+      "allowedValues": [
+        "No",
+        "Yes"
+      ],
+      "metadata": {
+        "description": "Select Yes to deploy DNS role on each DC. If select No, DNS role will not be installed. In this case you must have DNS server with domain primary DDNS zone present on another DNS server, which DC can reach register required SRV records"
+      }
+    },
     "adminUsername": {
       "type": "string",
       "metadata": {
@@ -202,10 +213,21 @@
     "dc2VmDeployment": "CreateADDC2VM",
     "dc2VmDeploymentId": "[concat('Microsoft.Resources/deployments/', variables('dc2VmDeployment'))]",
 
-    "deployPrimaryAd": "ConfigureAD",
-    "deployPrimaryAdId": "[concat('Microsoft.Resources/deployments/', variables('deployPrimaryAd'))]",
-    "deployDC2Ad": "PromoteDC2toAD",
-    "deployDC2AdId": "[concat('Microsoft.Resources/deployments/', variables('deployDC2Ad'))]",
+    "deployPrimaryAdWithDNS": "ConfigureADwithADDNS",
+    "deployPrimaryAdWithDNSId": "[concat('Microsoft.Resources/deployments/', variables('deployPrimaryAdWithDNS'))]",
+    "deployDC2AdWithDNS": "PromoteDC2toADWithADDNS",
+    "deployDC2AdWithDNSId": "[concat('Microsoft.Resources/deployments/', variables('deployDC2AdWithDNS'))]",
+
+    "deployPrimaryAdWithoutDNS": "ConfigureADwithoutADDNS",
+    "deployPrimaryAdWithoutDNSId": "[concat('Microsoft.Resources/deployments/', variables('deployPrimaryAdWithoutDNS'))]",
+    "deployDC2AdWithoutDNS": "PromoteDC2toADWithoutADDNS",
+    "deployDC2AdWithoutDNSId": "[concat('Microsoft.Resources/deployments/', variables('deployDC2AdWithoutDNS'))]",
+
+    "adPDCConfigurationFunctionWithADDNS": "DeployADDS.ps1\\CreateADPDC",
+    "adDC2ConfigurationFunctionWithADDNS": "DeployADDS.ps1\\DeployDC2",
+
+    "adPDCConfigurationFunctionWithoutADDNS": "DeployADDS.ps1\\CreateADPDCwithoutADDNS",
+    "adDC2ConfigurationFunctionWithoutADDNS": "DeployADDS.ps1\\DeployDC2withoutADDNS",
 
     "adcsVmDeployment": "CreateADCSVM",
     "adcsVmDeploymentId": "[concat('Microsoft.Resources/deployments/', variables('adcsVmDeployment'))]",
@@ -325,7 +347,8 @@
       }
     },
     {
-      "name": "[variables('deployPrimaryAd')]",
+      "condition": "[equals(parameters('deployWithDNS'),'Yes')]",
+      "name": "[variables('deployPrimaryAdWithDNS')]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
       "dependsOn": [
@@ -349,6 +372,61 @@
           },
           "adminPassword": {
             "value": "[parameters('adminPassword')]"
+          },
+          "adConfigurationFunction": {
+            "value": "[variables('adPDCConfigurationFunctionWithADDNS')]"
+          },
+          "assetLocationStorageAccount": {
+            "value": "[variables('assetLocationStorageAccount')]"
+          },
+          "storageAccountKeyviaKeyvault": {
+            "reference": {
+              "keyVault": {
+                "id": "[variables('secretskeyVaultID')]"
+              },
+              "secretName": "[variables('secretName')]"
+            }
+          },
+          "storageAccountSASTokenviaKeyvault": {
+            "reference": {
+              "keyVault": {
+                "id": "[variables('secretskeyVaultID')]"
+              },
+              "secretName": "[variables('secretnameSASurl')]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "condition": "[equals(parameters('deployWithDNS'),'No')]",
+      "name": "[variables('deployPrimaryAdWithoutDNS')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('dc1VmDeploymentId')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('deployPrimaryAdTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "dc1VMName": {
+            "value": "[variables('dc1VMName')]"
+          },
+          "domainName": {
+            "value": "[parameters('domainName')]"
+          },
+          "adminUsername": {
+            "value": "[parameters('adminUsername')]"
+          },
+          "adminPassword": {
+            "value": "[parameters('adminPassword')]"
+          },
+          "adConfigurationFunction": {
+            "value": "[variables('adPDCConfigurationFunctionWithoutADDNS')]"
           },
           "assetLocationStorageAccount": {
             "value": "[variables('assetLocationStorageAccount')]"
@@ -427,7 +505,8 @@
       }
     },
     {
-      "name": "[variables('deployDC2AD')]",
+      "condition": "[equals(parameters('deployWithDNS'),'Yes')]",
+      "name": "[variables('deployDC2AdWithDNS')]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
       "dependsOn": [
@@ -454,6 +533,64 @@
           },
           "assetLocation": {
             "value": "[variables('assetLocation')]"
+          },
+          "adConfigurationFunction": {
+            "value": "[variables('adDC2ConfigurationFunctionWithADDNS')]"
+          },
+          "assetLocationStorageAccount": {
+            "value": "[variables('assetLocationStorageAccount')]"
+          },
+          "storageAccountKeyviaKeyvault": {
+            "reference": {
+              "keyVault": {
+                "id": "[variables('secretskeyVaultID')]"
+              },
+              "secretName": "[variables('secretName')]"
+            }
+          },
+          "storageAccountSASTokenviaKeyvault": {
+            "reference": {
+              "keyVault": {
+                "id": "[variables('secretskeyVaultID')]"
+              },
+              "secretName": "[variables('secretnameSASurl')]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "condition": "[equals(parameters('deployWithDNS'),'No')]",
+      "name": "[variables('deployDC2AdWithoutDNS')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('dc2VmDeploymentId')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('deployDC2AdTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "dc2VMName": {
+            "value": "[variables('dc2VMName')]"
+          },
+          "domainName": {
+            "value": "[parameters('domainName')]"
+          },
+          "adminUsername": {
+            "value": "[parameters('adminUsername')]"
+          },
+          "adminPassword": {
+            "value": "[parameters('adminPassword')]"
+          },
+          "assetLocation": {
+            "value": "[variables('assetLocation')]"
+          },
+          "adConfigurationFunction": {
+            "value": "[variables('adDC2ConfigurationFunctionWithoutADDNS')]"
           },
           "assetLocationStorageAccount": {
             "value": "[variables('assetLocationStorageAccount')]"

@@ -26,6 +26,12 @@
         "description": "The password for the Administrator account of the new VMs and Domain"
       }
     },
+    "adConfigurationFunction": {
+      "type": "string",
+      "metadata": {
+        "description": "Configuration Function value"
+      }
+    },
     "assetLocationStorageAccount": {
       "type": "string",
       "metadata": {
@@ -47,7 +53,8 @@
   },
   "variables": {
     "adPDCModulesURL": "[concat(parameters('assetLocationStorageAccount'),'/scripts/DeployADDS.zip')]",
-    "adPDCConfigurationFunction": "DeployADDS.ps1\\CreateADPDC"
+    "adPDCConfigurationFunction": "[parameters('adConfigurationFunction')]",
+    "adPDCConfigurationFunctionOLD": "DeployADDS.ps1\\CreateADPDC"
   },
   "resources": [
     {

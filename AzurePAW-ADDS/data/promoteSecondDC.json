@@ -32,6 +32,12 @@
         "description": "The location of resources that the script is dependent on such as linked templates and DSC modules"
       }
     },
+    "adConfigurationFunction": {
+      "type": "string",
+      "metadata": {
+        "description": "Configuration Function value"
+      }
+    },
     "assetLocationStorageAccount": {
       "type": "string",
       "metadata": {
@@ -53,7 +59,8 @@
   },
   "variables": {
     "adDC2ModulesURL": "[concat(parameters('assetLocationStorageAccount'),'/scripts/DeployADDS.zip')]",
-    "adDC2ConfigurationFunction": "DeployADDS.ps1\\DeployDC2"
+    "adPDCConfigurationFunction": "[parameters('adConfigurationFunction')]",
+    "adDC2ConfigurationFunctionOLD": "DeployADDS.ps1\\DeployDC2"
   },
   "resources": [
     {
