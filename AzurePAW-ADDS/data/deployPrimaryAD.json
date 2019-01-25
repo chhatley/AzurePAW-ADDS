@@ -32,6 +32,12 @@
         "description": "Configuration Function value"
       }
     },
+    "NonADDSDNSIPAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "DNS IP Address"
+      }
+    },
     "assetLocationStorageAccount": {
       "type": "string",
       "metadata": {
@@ -73,6 +79,7 @@
           "SasToken": "[parameters('storageAccountSASTokenviaKeyvault')]",
           "properties": {
             "domainName": "[parameters('domainName')]",
+            "DNSServer": "[parameters('NonADDSDNSIPAddress')]",
             "adminCreds": {
               "userName": "[parameters('adminUserName')]",
               "password": "PrivateSettingsRef:adminPassword"

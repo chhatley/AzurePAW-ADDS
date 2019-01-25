@@ -9,7 +9,7 @@
         "description": "Current deployment supports top level domain name only, for example contoso.com, fabrikam.com etc"
       }
     },
-    "deployWithDNS": {
+    "deployWithADDSDNS": {
       "type": "string",
       "defaultValue": "Yes",
       "allowedValues": [
@@ -19,6 +19,13 @@
       "metadata": {
         "description": "Select Yes to deploy DNS role on each DC. If select No, DNS role will not be installed. In this case you must have DNS server with domain primary DDNS zone present on another DNS server, which DC can reach register required SRV records"
       }
+    },
+    "NonADDSDNSIPAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "If selected No for ADDS DNS installation then provide valid IP address for DNS server that hosts DNS zone for the ADDS domain"
+      },
+      "defaultValue": "10.0.10.4"
     },
     "adminUsername": {
       "type": "string",
@@ -347,7 +354,7 @@
       }
     },
     {
-      "condition": "[equals(parameters('deployWithDNS'),'Yes')]",
+      "condition": "[equals(parameters('deployWithADDSDNS'),'Yes')]",
       "name": "[variables('deployPrimaryAdWithDNS')]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
@@ -376,6 +383,9 @@
           "adConfigurationFunction": {
             "value": "[variables('adPDCConfigurationFunctionWithADDNS')]"
           },
+          "NonADDSDNSIPAddress": {
+            "value": "[parameters('NonADDSDNSIPAddress')]"
+          },
           "assetLocationStorageAccount": {
             "value": "[variables('assetLocationStorageAccount')]"
           },
@@ -399,7 +409,7 @@
       }
     },
     {
-      "condition": "[equals(parameters('deployWithDNS'),'No')]",
+      "condition": "[equals(parameters('deployWithADDSDNS'),'No')]",
       "name": "[variables('deployPrimaryAdWithoutDNS')]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
@@ -427,6 +437,9 @@
           },
           "adConfigurationFunction": {
             "value": "[variables('adPDCConfigurationFunctionWithoutADDNS')]"
+          },
+          "NonADDSDNSIPAddress": {
+            "value": "[parameters('NonADDSDNSIPAddress')]"
           },
           "assetLocationStorageAccount": {
             "value": "[variables('assetLocationStorageAccount')]"
@@ -506,7 +519,7 @@
       }
     },
     {
-      "condition": "[equals(parameters('deployWithDNS'),'Yes')]",
+      "condition": "[equals(parameters('deployWithADDSDNS'),'Yes')]",
       "name": "[variables('deployDC2AdWithDNS')]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
@@ -538,6 +551,9 @@
           "adConfigurationFunction": {
             "value": "[variables('adDC2ConfigurationFunctionWithADDNS')]"
           },
+          "NonADDSDNSIPAddress": {
+            "value": "[parameters('NonADDSDNSIPAddress')]"
+          },
           "assetLocationStorageAccount": {
             "value": "[variables('assetLocationStorageAccount')]"
           },
@@ -561,7 +577,7 @@
       }
     },
     {
-      "condition": "[equals(parameters('deployWithDNS'),'No')]",
+      "condition": "[equals(parameters('deployWithADDSDNS'),'No')]",
       "name": "[variables('deployDC2AdWithoutDNS')]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
@@ -592,6 +608,9 @@
           },
           "adConfigurationFunction": {
             "value": "[variables('adDC2ConfigurationFunctionWithoutADDNS')]"
+          },
+          "NonADDSDNSIPAddress": {
+            "value": "[parameters('NonADDSDNSIPAddress')]"
           },
           "assetLocationStorageAccount": {
             "value": "[variables('assetLocationStorageAccount')]"

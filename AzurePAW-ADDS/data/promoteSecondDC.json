@@ -38,6 +38,12 @@
         "description": "Configuration Function value"
       }
     },
+    "NonADDSDNSIPAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "DNS IP Address"
+      }
+    },
     "assetLocationStorageAccount": {
       "type": "string",
       "metadata": {
@@ -59,7 +65,7 @@
   },
   "variables": {
     "adDC2ModulesURL": "[concat(parameters('assetLocationStorageAccount'),'/scripts/DeployADDS.zip')]",
-    "adPDCConfigurationFunction": "[parameters('adConfigurationFunction')]",
+    "adConfigurationFunction": "[parameters('adConfigurationFunction')]",
     "adDC2ConfigurationFunctionOLD": "DeployADDS.ps1\\DeployDC2"
   },
   "resources": [
@@ -75,10 +81,11 @@
         "autoUpgradeMinorVersion": true,
         "settings": {
           "modulesUrl": "[variables('adDC2ModulesURL')]",
-          "configurationFunction": "[variables('adDC2ConfigurationFunction')]",
+          "configurationFunction": "[variables('adConfigurationFunction')]",
           "SasToken": "[parameters('storageAccountSASTokenviaKeyvault')]",
           "properties": {
             "domainName": "[parameters('domainName')]",
+            "DNSServer": "[parameters('NonADDSDNSIPAddress')]",
             "adminCreds": {
               "userName": "[parameters('adminUserName')]",
               "password": "PrivateSettingsRef:adminPassword"
