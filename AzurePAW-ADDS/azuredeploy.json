@@ -41,6 +41,13 @@
       },
       "defaultValue": "[concat('Subscription#',subscription().subscriptionId)]"
     },
+    "dsrmPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The password for the DSRM account for ADDS. If you do not change it, then it will look like this: Subscription#SUBSCRIPTIONID"
+      },
+      "defaultValue": "[concat('Subscription#',subscription().subscriptionId)]"
+    },
     "adfsSVCname": {
       "type": "string",
       "metadata": {
@@ -380,6 +387,9 @@
           "adminPassword": {
             "value": "[parameters('adminPassword')]"
           },
+          "dsrmPassword": {
+            "value": "[parameters('dsrmPassword')]"
+          },
           "adConfigurationFunction": {
             "value": "[variables('adPDCConfigurationFunctionWithADDNS')]"
           },
@@ -434,6 +444,9 @@
           },
           "adminPassword": {
             "value": "[parameters('adminPassword')]"
+          },
+          "dsrmPassword": {
+            "value": "[parameters('dsrmPassword')]"
           },
           "adConfigurationFunction": {
             "value": "[variables('adPDCConfigurationFunctionWithoutADDNS')]"

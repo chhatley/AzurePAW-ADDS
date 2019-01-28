@@ -26,6 +26,12 @@
         "description": "The password for the Administrator account of the new VMs and Domain"
       }
     },
+    "dsrmPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The password for DSRM for ADDS"
+      }
+    },
     "adConfigurationFunction": {
       "type": "string",
       "metadata": {
@@ -83,12 +89,14 @@
             "adminCreds": {
               "userName": "[parameters('adminUserName')]",
               "password": "PrivateSettingsRef:adminPassword"
-            }
+            },
+            "DSRMPWD": "PrivateSettingsRef:DSRMPWD"
           }
         },
         "protectedSettings": {
           "items": {
             "adminPassword": "[parameters('adminPassword')]",
+            "DSRMPWD": "[parameters('dsrmPassword')]",
             "configurationUrlSasToken": "[parameters('storageAccountSASTokenviaKeyvault')]"
           }
         }
