@@ -38,6 +38,12 @@
         "description": "The VM name of ADCS Server"
       }
     },
+    "adcsDeployment": {
+      "type": "string",
+      "metadata": {
+        "description": "Yes or No for ADCS deployment"
+      }
+    },
     "assetLocationStorageAccount": {
       "type": "string",
       "metadata": {
@@ -94,7 +100,7 @@
           ]
         },
         "protectedSettings": {
-          "commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ExtendAD-DIAD.ps1 -user ',parameters('adminUsername'),' -password ',parameters('adminPassword'),' -CAName ',parameters('adcsVMName'),' -DCvmName ',parameters('VMName'),' -domainname ',parameters('domainName'),' -shortname ',variables('shortDomainName'),' -ou ',variables('ou'),' -group ',variables('Tier0ServerOperators'),' -svcADFS ',variables('ADFSsvcAccount'),' -ServiceAccountsOU ',variables('ServiceAccountsOU'),' -upn ',variables('upn'),'')]",
+          "commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ExtendAD-DIAD.ps1 -user ',parameters('adminUsername'),' -password ',parameters('adminPassword'),' -CAName ',parameters('adcsVMName'),' -DCvmName ',parameters('VMName'),' -domainname ',parameters('domainName'),' -shortname ',variables('shortDomainName'),' -ou ',variables('ou'),' -group ',variables('Tier0ServerOperators'),' -svcADFS ',variables('ADFSsvcAccount'),' -adcsDeployment ',parameters('adcsDeployment'),' -ServiceAccountsOU ',variables('ServiceAccountsOU'),' -upn ',variables('upn'),'')]",
           "storageAccountName": "[variables('storageAccountName')]",
           "storageAccountKey": "[parameters('storageAccountKeyviaKeyvault')]"
         }

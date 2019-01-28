@@ -719,6 +719,9 @@
           "adfsSVCname": {
             "value": "[parameters('adfsSVCname')]"
           },
+          "adcsDeployment": {
+            "value": "[parameters('deployADCS')]"
+          },
           "assetLocationStorageAccount": {
             "value": "[variables('assetLocationStorageAccount')]"
           },
