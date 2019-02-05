@@ -213,13 +213,22 @@
       "metadata": {
         "description": "ADE Key Vault RG"
       }
+    },
+    "adAvailabilitySetName": {
+      "type": "string",
+      "metadata": {
+        "description": "ADDS Availability Set Name"
+      }
     }
   },
   "variables": {
     "assetLocation": "https://raw.githubusercontent.com/dmitriilezine/AzurePAW-ADDS/master/AzurePAW-ADDS",
     "assetLocationStorageAccount": "[parameters('ScriptsLocation')]",
     "VMSize": "[parameters('VirtualMachineSize')]",
+    
     "OSVersion": "2016-Datacenter",
+    "imageOffer": "WindowsServer",
+    "imagePublisher": "MicrosoftWindowsServer",
 
     "ADDSsubnetResourceID": "[resourceId(parameters('existingVirtualNetworkRG'), 'Microsoft.Network/virtualNetworks/subnets', parameters('existingVirtualNetworkName'), parameters('DomainControllersSubnetName'))]",
 
@@ -242,19 +251,19 @@
     "dc2VMName": "[parameters('DC2VMName')]",
     "adcsVMName": "[parameters('adcsVMName')]",
 
-    "dc1VmDeployment": "CreateADDC1VM",
+    "dc1VmDeployment": "[concat('Create-', parameters('DC1VMName'))]",
     "dc1VmDeploymentId": "[concat('Microsoft.Resources/deployments/', variables('dc1VmDeployment'))]",
-    "dc2VmDeployment": "CreateADDC2VM",
+    "dc2VmDeployment": "[concat('Create-', parameters('DC2VMName'))]",
     "dc2VmDeploymentId": "[concat('Microsoft.Resources/deployments/', variables('dc2VmDeployment'))]",
 
-    "deployPrimaryAdWithDNS": "ConfigureADwithADDNS",
+    "deployPrimaryAdWithDNS": "[concat('CreateNewForestwithADDNS-', parameters('DC1VMName'))]",
     "deployPrimaryAdWithDNSId": "[concat('Microsoft.Resources/deployments/', variables('deployPrimaryAdWithDNS'))]",
-    "deployDC2AdWithDNS": "PromoteDC2toADWithADDNS",
+    "deployDC2AdWithDNS": "[concat('PromoteToDCwithADDNS-', parameters('DC2VMName'))]",
     "deployDC2AdWithDNSId": "[concat('Microsoft.Resources/deployments/', variables('deployDC2AdWithDNS'))]",
 
-    "deployPrimaryAdWithoutDNS": "ConfigureADwithoutADDNS",
+    "deployPrimaryAdWithoutDNS": "[concat('CreateNewForestwithoutADDNS-', parameters('DC1VMName'))]",
     "deployPrimaryAdWithoutDNSId": "[concat('Microsoft.Resources/deployments/', variables('deployPrimaryAdWithoutDNS'))]",
-    "deployDC2AdWithoutDNS": "PromoteDC2toADWithoutADDNS",
+    "deployDC2AdWithoutDNS": "[concat('PromoteToDCwithoutADDNS-', parameters('DC2VMName'))]",
     "deployDC2AdWithoutDNSId": "[concat('Microsoft.Resources/deployments/', variables('deployDC2AdWithoutDNS'))]",
 
     "adPDCConfigurationFunctionWithADDNS": "DeployADDS.ps1\\CreateADPDC",
@@ -263,34 +272,34 @@
     "adPDCConfigurationFunctionWithoutADDNS": "DeployADDS.ps1\\CreateADPDCwithoutADDNS",
     "adDC2ConfigurationFunctionWithoutADDNS": "DeployADDS.ps1\\DeployDC2withoutADDNS",
 
-    "adcsVmDeployment": "CreateADCSVM",
+    "adcsVmDeployment": "[concat('Create-', parameters('adcsVMName'))]",
     "adcsVmDeploymentId": "[concat('Microsoft.Resources/deployments/', variables('adcsVmDeployment'))]",
 
-    "adcsDeployment": "DeployADCS",
+    "adcsDeployment": "[concat('DeployADCSon-', parameters('adcsVMName'))]",
     "adcsDeploymentId": "[concat('Microsoft.Resources/deployments/', variables('adcsDeployment'))]",
 
     "DIADouGPODeployment": "DeployDIAD-OUs-GPOs",
     "DIADouGPODeploymentId": "[concat('Microsoft.Resources/deployments/', variables('DIADouGPODeployment'))]",
 
-    "deployVMDiagnosticsDC1": "deployVMDiagnosticsDC1",
+    "deployVMDiagnosticsDC1": "[concat('DeployVMDiagnosticsOn-', parameters('DC1VMName'))]",
     "deployVMDiagnosticsDC1Id": "[concat('Microsoft.Resources/deployments/', variables('deployVMDiagnosticsDC1'))]",
-    "deployVMDiagnosticsDC2": "deployVMDiagnosticsDC2",
+    "deployVMDiagnosticsDC2": "[concat('DeployVMDiagnosticsOn-', parameters('DC2VMName'))]",
     "deployVMDiagnosticsDC2Id": "[concat('Microsoft.Resources/deployments/', variables('deployVMDiagnosticsDC2'))]",
-    "deployVMDiagnosticsADCS": "deployVMDiagnosticsADCS",
+    "deployVMDiagnosticsADCS": "[concat('DeployVMDiagnosticsOn-', parameters('adcsVMName'))]",
     "deployVMDiagnosticsADCSId": "[concat('Microsoft.Resources/deployments/', variables('deployVMDiagnosticsADCS'))]",
 
-    "deployAntimalwareDC1": "deployAntimalwareDC1",
+    "deployAntimalwareDC1": "[concat('DeployAntimalwareOn-', parameters('DC1VMName'))]",
     "deployAntimalwareDC1Id": "[concat('Microsoft.Resources/deployments/', variables('deployAntimalwareDC1'))]",
-    "deployAntimalwareDC2": "deployAntimalwareDC2",
+    "deployAntimalwareDC2": "[concat('DeployAntimalwareOn-', parameters('DC2VMName'))]",
     "deployAntimalwareDC2Id": "[concat('Microsoft.Resources/deployments/', variables('deployAntimalwareDC2'))]",
-    "deployAntimalwareADCS": "deployAntimalwareADCS",
+    "deployAntimalwareADCS": "[concat('DeployAntimalwareOn-', parameters('adcsVMName'))]",
     "deployAntimalwareADCSId": "[concat('Microsoft.Resources/deployments/', variables('deployAntimalwareADCS'))]",
 
-    "encryptDC1": "encryptDC1",
+    "encryptDC1": "[concat('EncryptDisksOn-', parameters('DC1VMName'))]",
     "encryptDC1Id": "[concat('Microsoft.Resources/deployments/', variables('encryptDC1'))]",
-    "encryptDC2": "encryptDC2",
+    "encryptDC2": "[concat('EncryptDisksOn-', parameters('DC2VMName'))]",
     "encryptDC2Id": "[concat('Microsoft.Resources/deployments/', variables('encryptDC2'))]",
-    "encryptADCS": "encryptADCS",
+    "encryptADCS": "[concat('EncryptDisksOn-', parameters('adcsVMName'))]",
     "encryptADCSId": "[concat('Microsoft.Resources/deployments/', variables('encryptADCS'))]",
 
     "shortDomainName": "[split(parameters('domainName'),'.')[0]]",
@@ -309,14 +318,11 @@
 
     "diagnosticsaccountid": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/',parameters('StorageAccountRG'), '/providers/','Microsoft.Storage/storageAccounts/', parameters('diagnosticsStorageAccountName'))]",
 
-    "imageOffer": "WindowsServer",
-    "imagePublisher": "MicrosoftWindowsServer",
+    "adAvailabilitySetName": "[parameters('adAvailabilitySetName')]",
 
-    "adAvailabilitySetName": "addsAvailabiltySet",
-
-    "dc1NICName": "[concat('DC1-Nic',resourceGroup().name)]",
-    "dc2NICName": "[concat('DC2-Nic',resourceGroup().name)]",
-    "adcsNICName": "[concat('ADCS-Nic',resourceGroup().name)]"
+    "dc1NICName": "[concat(parameters('DC1VMName'),'-Nic',resourceGroup().name)]",
+    "dc2NICName": "[concat(parameters('DC2VMName'),'-Nic',resourceGroup().name)]",
+    "adcsNICName": "[concat(parameters('adcsVMName'),'-Nic',resourceGroup().name)]"
 
   },
   "resources": [
