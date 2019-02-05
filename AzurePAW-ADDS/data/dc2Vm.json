@@ -119,6 +119,7 @@
     "shortDomainName": "[split(parameters('domainName'),'.')[0]]",
     "ouPath": "",
     "joinUser": "[concat(variables('shortDomainName'), '\\', parameters('adminUsername'))]",
+    "joinUserNetBIOS": "[concat(parameters('netbiosName'), '\\', parameters('adminUsername'))]",
     "joinUserDN": "[concat(parameters('domainName'), '\\', parameters('adminUsername'))]",
     "joinuserUPN": "[concat(parameters('adminUsername'),'@',parameters('domainName'))]",
     "vmvhdContainerName": "vhds"
