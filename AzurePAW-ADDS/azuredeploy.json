@@ -218,7 +218,8 @@
       "type": "string",
       "metadata": {
         "description": "ADDS Availability Set Name"
-      }
+      },
+      "defaultValue": "adAvailabilitySet"
     }
   },
   "variables": {
@@ -553,6 +554,9 @@
           },
           "domainName": {
             "value": "[parameters('domainName')]"
+          },
+          "netbiosName": {
+            "value": "[parameters('netbiosName')]"
           },
           "adAvailabilitySetName": {
             "value": "[variables('adAvailabilitySetName')]"
