@@ -9,6 +9,12 @@
         "description": "Current deployment supports top level domain name only, for example contoso.com, fabrikam.com etc"
       }
     },
+    "netbiosName": {
+      "type": "string",
+      "metadata": {
+        "description": "Specify unique for your network domain NetBIOS name"
+      }
+    },
     "deployWithADDSDNS": {
       "type": "string",
       "defaultValue": "Yes",
@@ -74,25 +80,6 @@
       "defaultValue": "Subnet Name where DCs will be deployed in vNet -> DomainControllers...",
       "metadata": {
         "description": "Name of the subnet in the virtual network you want to put this VM"
-      }
-    },
-    "subscriptionID": {
-      "type": "string",
-      "metadata": {
-        "description": "Subscription ID is used to provide access path to the Secrets Key Vault"
-      },
-      "defaultValue": "Subscription ID for Secrets Key Vault that provide access to the deployment scripts."
-    },
-    "secretsVaultName": {
-      "type": "string",
-      "metadata": {
-        "description": "The name of the Key Vault where secrets are stored for accessing deployment scripts"
-      }
-    },
-    "secretsKeyVaultRG": {
-      "type": "string",
-      "metadata": {
-        "description": "The name of the RG where Secrets Key Vault is stored"
       }
     },
     "VirtualMachineSize": {
@@ -167,6 +154,39 @@
         "description": "Storage account for scripts"
       },
       "defaultValue": "https://azurepaw.blob.core.windows.net"
+    },
+    "subscriptionID": {
+      "type": "string",
+      "metadata": {
+        "description": "Subscription ID is used to provide access path to the Secrets Key Vault"
+      },
+      "defaultValue": "Subscription ID for Secrets Key Vault that provide access to the deployment scripts."
+    },
+    "saSecretsVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Key Vault where secrets are stored for accessing deployment scripts"
+      }
+    },
+    "saSecretsKeyVaultRG": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the RG where Secrets Key Vault is stored"
+      }
+    },
+    "saSecretKeyName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the secret that holds key for Storage account"
+      },
+      "defaultValue": "AzurePAWPOC1SAKey2"
+    },
+    "saSecretSASName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the secret that holds SAS for Storage account"
+      },
+      "defaultValue": "AzurePAWPOC1SAS"
     },
     "diagnosticsStorageAccountName": {
       "type": "string",
@@ -281,10 +301,10 @@
     "ouPathT0Idenity": "[concat('OU=T0-Identity; OU=T0-Servers; OU=Tier 0; OU=Admin;', 'DC=',variables('shortDomainName'),'; DC=',variables('domainSuffix'))]",
     "ouPathNone": "",
 
-    "secretsVaultName": "[parameters('secretsVaultName')]",
-    "secretName": "AzurePAWPOC1SAKey2",
-    "secretnameSASurl": "AzurePAWPOC1SAS",
-    "secretsKeyVaultRG": "[parameters('secretsKeyVaultRG')]",
+    "secretsVaultName": "[parameters('saSecretsVaultName')]",
+    "secretName": "[parameters('saSecretKeyName')]",
+    "secretnameSASurl": "[parameters('saSecretSASName')]",
+    "secretsKeyVaultRG": "[parameters('saSecretsKeyVaultRG')]",
     "secretskeyVaultID": "[concat('/subscriptions/', parameters('subscriptionID'), '/resourceGroups/', variables('secretsKeyVaultRG'), '/providers/Microsoft.KeyVault/vaults/', variables('secretsVaultName'))]",
 
     "diagnosticsaccountid": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/',parameters('StorageAccountRG'), '/providers/','Microsoft.Storage/storageAccounts/', parameters('diagnosticsStorageAccountName'))]",
@@ -381,6 +401,9 @@
           "domainName": {
             "value": "[parameters('domainName')]"
           },
+          "netbiosName": {
+            "value": "[parameters('netbiosName')]"
+          },
           "adminUsername": {
             "value": "[parameters('adminUsername')]"
           },
@@ -438,6 +461,9 @@
           },
           "domainName": {
             "value": "[parameters('domainName')]"
+          },
+          "netbiosName": {
+            "value": "[parameters('netbiosName')]"
           },
           "adminUsername": {
             "value": "[parameters('adminUsername')]"
@@ -552,6 +578,9 @@
           "domainName": {
             "value": "[parameters('domainName')]"
           },
+          "netbiosName": {
+            "value": "[parameters('netbiosName')]"
+          },
           "adminUsername": {
             "value": "[parameters('adminUsername')]"
           },
@@ -609,6 +638,9 @@
           },
           "domainName": {
             "value": "[parameters('domainName')]"
+          },
+          "netbiosName": {
+            "value": "[parameters('netbiosName')]"
           },
           "adminUsername": {
             "value": "[parameters('adminUsername')]"
@@ -691,6 +723,9 @@
           "domainName": {
             "value": "[parameters('domainName')]"
           },
+          "netbiosName": {
+            "value": "[parameters('netbiosName')]"
+          },
           "ouPath": {
             "value": "[variables('ouPathNone')]"
           },
@@ -722,6 +757,9 @@
           },
           "domainName": {
             "value": "[parameters('domainName')]"
+          },
+          "netbiosName": {
+            "value": "[parameters('netbiosName')]"
           },
           "adminUsername": {
             "value": "[parameters('adminUsername')]"
@@ -774,6 +812,9 @@
           },
           "domainName": {
             "value": "[parameters('domainName')]"
+          },
+          "netbiosName": {
+            "value": "[parameters('netbiosName')]"
           },
           "adminUsername": {
             "value": "[parameters('adminUsername')]"

@@ -33,6 +33,12 @@
         "description": "The domain name"
       }
     },
+    "netbiosName": {
+      "type": "string",
+      "metadata": {
+        "description": "Domain Netbios name"
+      }
+    },
     "NicName": {
       "type": "string",
       "metadata": {

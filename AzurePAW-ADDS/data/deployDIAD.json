@@ -14,6 +14,12 @@
         "description": "The domain name"
       }
     },
+    "netbiosName": {
+      "type": "string",
+      "metadata": {
+        "description": "Domain Netbios name"
+      }
+    },
     "adminUsername": {
       "type": "string",
       "metadata": {
@@ -63,9 +69,6 @@
     "psScriptCertTemplatesZipPackageURL": "[concat(parameters('assetLocationStorageAccount'),'/scripts/createCertTemplates.zip')]",
     "psScriptADFSDeltaURL": "[concat(parameters('assetLocationStorageAccount'),'/scripts/ADFSDeltaGPO.zip')]",
 
-    "ouoldold": "[concat('CN=Users,DC=contoso,DC=com')]",
-    "ouOLD": "[concat('DC=contoso,DC=com')]",
-    "upnOLD": "[concat('contoso.com')]",
     "shortDomainName": "[split(parameters('domainName'),'.')[0]]",
     "domainSuffix": "[split(parameters('domainName'),'.')[1]]",
     "ou": "[concat('DC=',variables('shortDomainName'),',DC=',variables('domainSuffix'))]",
@@ -100,7 +103,7 @@
           ]
         },
         "protectedSettings": {
-          "commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ExtendAD-DIAD.ps1 -user ',parameters('adminUsername'),' -password ',parameters('adminPassword'),' -CAName ',parameters('adcsVMName'),' -DCvmName ',parameters('VMName'),' -domainname ',parameters('domainName'),' -shortname ',variables('shortDomainName'),' -ou ',variables('ou'),' -group ',variables('Tier0ServerOperators'),' -svcADFS ',variables('ADFSsvcAccount'),' -adcsDeployment ',parameters('adcsDeployment'),' -ServiceAccountsOU ',variables('ServiceAccountsOU'),' -upn ',variables('upn'),'')]",
+          "commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ExtendAD-DIAD.ps1 -user ',parameters('adminUsername'),' -password ',parameters('adminPassword'),' -CAName ',parameters('adcsVMName'),' -DCvmName ',parameters('VMName'),' -domainname ',parameters('domainName'),' -shortname ',parameters('netbiosName'),' -ou ',variables('ou'),' -group ',variables('Tier0ServerOperators'),' -svcADFS ',variables('ADFSsvcAccount'),' -adcsDeployment ',parameters('adcsDeployment'),' -ServiceAccountsOU ',variables('ServiceAccountsOU'),' -upn ',variables('upn'),'')]",
           "storageAccountName": "[variables('storageAccountName')]",
           "storageAccountKey": "[parameters('storageAccountKeyviaKeyvault')]"
         }
